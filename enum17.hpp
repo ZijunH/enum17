@@ -197,6 +197,51 @@ struct param_info {
 };
 
 template <typename inp_dataT>
+struct remove_duplicates {
+    constexpr static bool is_first(std::size_t cur_ind) {
+        typename inp_dataT::UT cur_val = inp_dataT::param_raw_infos[cur_ind].second;
+        for (std::size_t i = 0; i < cur_ind; i++) {
+            if (cur_val == inp_dataT::param_raw_infos[i].second) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    constexpr static auto is_first_arr() {
+        std::array<bool, inp_dataT::num_raw_params> ret{};
+        for (std::size_t i = 0; i < inp_dataT::num_raw_params; i++) {
+            ret[i] = is_first(i);
+        }
+        return ret;
+    };
+
+    constexpr static std::size_t is_first_num() {
+        std::size_t is_firsts = 0;
+        for (std::size_t i = 0; i < inp_dataT::num_raw_params; i++) {
+            is_firsts += mask[i];
+        }
+        return is_firsts;
+    };
+
+    constexpr static auto param_info() {
+        std::array<std::pair<std::string_view, typename inp_dataT::UT>, num> ret{};
+        std::size_t cur_ind = 0;
+        for (std::size_t i = 0; i < inp_dataT::num_raw_params; i++) {
+            if (mask[i]) {
+                ret[cur_ind].first = inp_dataT::param_raw_infos[i].first;
+                ret[cur_ind].second = inp_dataT::param_raw_infos[i].second;
+                cur_ind++;
+            }
+        }
+        return ret;
+    }
+
+    constexpr static auto mask = is_first_arr();
+    constexpr static auto num = is_first_num();
+};
+
+template <typename inp_dataT>
 struct gen_strings {
     constexpr static std::string_view cur_sep{"_"};
 
@@ -204,9 +249,9 @@ struct gen_strings {
     constexpr static std::size_t calc_str_len() {
         std::size_t len = 0;
         std::size_t num = 0;
-        for (std::size_t i = 0; i < inp_dataT::num_params; i++) {
-            if (val == inp_dataT::param_infos[i].second) {
-                len += inp_dataT::param_infos[i].first.size();
+        for (std::size_t i = 0; i < inp_dataT::num_raw_params; i++) {
+            if (val == inp_dataT::param_raw_infos[i].second) {
+                len += inp_dataT::param_raw_infos[i].first.size();
                 num++;
             }
         }
@@ -219,10 +264,10 @@ struct gen_strings {
         std::array<char, len> ret{};
         std::size_t cur_loc = 0;
 
-        for (std::size_t i = 0; i < inp_dataT::num_params; i++) {
-            if (val == inp_dataT::param_infos[i].second) {
-                for (std::size_t j = 0; j < inp_dataT::param_infos[i].first.size(); j++) {
-                    ret[cur_loc++] = inp_dataT::param_infos[i].first[j];
+        for (std::size_t i = 0; i < inp_dataT::num_raw_params; i++) {
+            if (val == inp_dataT::param_raw_infos[i].second) {
+                for (std::size_t j = 0; j < inp_dataT::param_raw_infos[i].first.size(); j++) {
+                    ret[cur_loc++] = inp_dataT::param_raw_infos[i].first[j];
                 }
                 if (cur_loc != len) {
                     for (std::size_t j = 0; j < cur_sep.size(); j++) {
@@ -247,53 +292,60 @@ struct gen_strings {
 
 }  // namespace enum17
 
-
-// TODO: aliased naming interaction not thought through
-#define ENUM17(enum_name, ut, ...)                                                                       \
-    struct enum_name {                                                                                   \
-        using UT = ut;                                                                                   \
-        enum Inner : UT { __VA_ARGS__ };                                                                 \
-        std::size_t cur_select;                                                                          \
-        constexpr static std::string_view name{#enum_name};                                              \
-        constexpr static std::string_view str{#__VA_ARGS__};                                             \
-        constexpr static std::size_t num_params = enum17::num_params(str);                               \
-        constexpr static auto param_locs = enum17::param_loc<num_params>(str);                           \
-        constexpr static auto param_infos = enum17::param_info<UT>::get_datas(param_locs);               \
-        constexpr static auto param_joined_names_str = enum17::gen_strings<enum_name>::gen_strs();       \
-        constexpr static auto param_joined_names = enum17::helper::arrs2svs(param_joined_names_str);     \
-        constexpr enum_name() : cur_select(0) {}                                                         \
-        constexpr enum_name(Inner inp) : cur_select(calc_ind(inp)) {}                                    \
-        constexpr explicit enum_name(UT inp) : enum_name(static_cast<Inner>(inp)) {}                     \
-        constexpr std::size_t calc_ind(Inner inp) const {                                                \
-            for (std::size_t i = 0; i < num_params; i++) {                                               \
-                if (param_infos[i].second == inp) {                                                      \
-                    return i;                                                                            \
-                }                                                                                        \
-            }                                                                                            \
+#define ENUM17(enum_name, ut, ...)                                                                   \
+    struct enum_name {                                                                               \
+        using UT = ut;                                                                               \
+        enum Inner : UT { __VA_ARGS__ };                                                             \
+        UT cur_select;                                                                               \
+        constexpr static std::string_view name{#enum_name};                                          \
+        constexpr static std::string_view str{#__VA_ARGS__};                                         \
+        constexpr static std::size_t num_raw_params = enum17::num_params(str);                       \
+        constexpr static auto param_locs = enum17::param_loc<num_raw_params>(str);                   \
+        constexpr static auto param_raw_infos = enum17::param_info<UT>::get_datas(param_locs);       \
+        using remove_duplicates = enum17::remove_duplicates<enum_name>;                              \
+        constexpr static auto num_params = remove_duplicates::num;                                   \
+        constexpr static auto param_infos = remove_duplicates::param_info();                         \
+        constexpr static auto param_joined_names_str = enum17::gen_strings<enum_name>::gen_strs();   \
+        constexpr static auto param_joined_names = enum17::helper::arrs2svs(param_joined_names_str); \
+        constexpr enum_name() : cur_select(0) {}                                                     \
+        constexpr enum_name(Inner inp) : cur_select(calc_ind(inp)) {}                                \
+        constexpr explicit enum_name(UT inp) : enum_name(static_cast<Inner>(inp)) {}                 \
+        constexpr std::size_t calc_ind(Inner inp) const {                                            \
+            for (std::size_t i = 0; i < num_params; i++) {                                           \
+                if (param_infos[i].second == inp) {                                                  \
+                    return i;                                                                        \
+                }                                                                                    \
+            }                                                                                        \
             assert(false && "Corresponding value not found");                                        \
             return 0;                                                                                \
-        }                                                                                                \
-        constexpr static std::size_t size() { return num_params; }                                       \
-        constexpr std::string_view to_string() const { return param_joined_names[cur_select]; }          \
-        constexpr static enum_name from_ind(std::size_t ind) {                                           \
-            auto ret = enum_name();                                                                      \
-            ret.cur_select = ind;                                                                        \
-            return ret;                                                                                  \
-        }                                                                                                \
-        constexpr static enum_name from_string(std::string_view str) {                                   \
-            for (std::size_t i = 0; i < num_params; i++) {                                               \
-                if (str == param_infos[i].first) {                                                       \
-                    return enum_name::from_ind(i);                                                       \
-                }                                                                                        \
-            }                                                                                            \
+        }                                                                                            \
+        constexpr static std::size_t size() {                                                        \
+            return num_params;                                                                       \
+        }                                                                                            \
+        constexpr std::string_view to_string() const {                                               \
+            return param_joined_names[cur_select];                                                   \
+        }                                                                                            \
+        constexpr static enum_name from_ind(std::size_t ind) {                                       \
+            auto ret = enum_name();                                                                  \
+            ret.cur_select = ind;                                                                    \
+            return ret;                                                                              \
+        }                                                                                            \
+        constexpr static enum_name from_string(std::string_view str) {                               \
+            for (std::size_t i = 0; i < num_params; i++) {                                           \
+                if (str == param_infos[i].first) {                                                   \
+                    return enum_name::from_ind(i);                                                   \
+                }                                                                                    \
+            }                                                                                        \
             assert(false && "Corresponding string not found");                                       \
-            return {};                                                                                \
-        }                                                                                                \
-        constexpr operator UT() {                                                                        \
-            return param_infos[cur_select].second;                                                       \
-        }                                                                                                \
-        constexpr UT to_ut() const { return param_infos[cur_select].second; }          \
-        friend inline std::ostream& operator<<(std::ostream& stream, const enum_name& value) {           \
-            return stream << name << "::" << value.to_string();                                          \
-        }                                                                                                \
+            return {};                                                                               \
+        }                                                                                            \
+        constexpr operator UT() {                                                                    \
+            return to_ut();                                                                          \
+        }                                                                                            \
+        constexpr UT to_ut() const {                                                                 \
+            return param_infos[cur_select].second;                                                   \
+        }                                                                                            \
+        friend inline std::ostream& operator<<(std::ostream& stream, const enum_name& value) {       \
+            return stream << name << "::" << value.to_string();                                      \
+        }                                                                                            \
     };
