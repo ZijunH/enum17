@@ -328,12 +328,17 @@ struct gen_strings {
         constexpr static enum_name from_ind(std::size_t ind) {                                       \
             auto ret = enum_name();                                                                  \
             ret.cur_select = ind;                                                                    \
+            assert(ind < num_params);                                                                \
             return ret;                                                                              \
         }                                                                                            \
+        constexpr static enum_name from_raw_ind(std::size_t ind) {                                   \
+            UT ut_val = param_raw_infos[ind].second;                                                 \
+            return enum_name(ut_val);                                                                \
+        }                                                                                            \
         constexpr static enum_name from_string(std::string_view str) {                               \
-            for (std::size_t i = 0; i < num_params; i++) {                                           \
-                if (str == param_infos[i].first) {                                                   \
-                    return enum_name::from_ind(i);                                                   \
+            for (std::size_t i = 0; i < num_raw_params; i++) {                                       \
+                if (str == param_raw_infos[i].first) {                                               \
+                    return enum_name::from_raw_ind(i);                                               \
                 }                                                                                    \
             }                                                                                        \
             assert(false && "Corresponding string not found");                                       \
