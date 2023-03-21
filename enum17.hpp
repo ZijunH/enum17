@@ -270,7 +270,8 @@ struct gen_strings {
                     return i;                                                                            \
                 }                                                                                        \
             }                                                                                            \
-            assert(false);                                                                               \
+            assert(false && "Corresponding value not found");                                        \
+            return 0;                                                                                \
         }                                                                                                \
         constexpr static std::size_t size() { return num_params; }                                       \
         constexpr std::string_view to_string() const { return param_joined_names[cur_select]; }          \
@@ -285,7 +286,8 @@ struct gen_strings {
                     return enum_name::from_ind(i);                                                       \
                 }                                                                                        \
             }                                                                                            \
-            assert(false);                                                                               \
+            assert(false && "Corresponding string not found");                                       \
+            return {};                                                                                \
         }                                                                                                \
         constexpr operator UT() {                                                                        \
             return param_infos[cur_select].second;                                                       \
