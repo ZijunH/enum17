@@ -171,10 +171,10 @@ struct param_info {
         return str_view.size();
     }
 
-    constexpr static std::pair<std::string_view, UT> get_data(std::string_view str_view, UT prev_value) {
+    constexpr static std::pair<std::string_view, UT> get_data(std::string_view str_view, UT cur_value) {
         std::size_t equ_loc = find_equ(str_view);
         if (equ_loc == str_view.size()) {
-            return {str_view, prev_value + 1};
+            return {str_view, cur_value};
         } else {
             std::size_t prev_end = helper::prev_not_ws(str_view, equ_loc - 1) + 1;
             std::size_t next_start = helper::next_not_ws(str_view, equ_loc + 1);
@@ -185,12 +185,12 @@ struct param_info {
     template <std::size_t N>
     constexpr static auto get_datas(const std::array<std::string_view, N>& str_views) {
         std::array<std::pair<std::string_view, UT>, N> ret;
-        UT prev_value = -1;
+        UT cur_value = 0;
         for (std::size_t i = 0; i < N; i++) {
-            auto res = get_data(str_views[i], prev_value);
+            auto res = get_data(str_views[i], cur_value);
             ret[i].first = res.first;
             ret[i].second = res.second;
-            prev_value = ret[i].second;
+            cur_value = ret[i].second + 1;
         }
         return ret;
     }
