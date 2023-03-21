@@ -8,7 +8,13 @@ This is done with C++ macro expansions, where one can obtain the string used to 
 
 ## Examples
 
-> Coming soon
+```cpp
+#include <enum17.hpp>
+
+ENUM17(EnumName, int, A = 1, B, C = 2, D)
+```
+
+> More coming soon
 
 ## Highlights
 
@@ -18,7 +24,17 @@ This is done with C++ macro expansions, where one can obtain the string used to 
 - Convert to the enum by `Enum::from_string()`.
 - Implicit conversion to and from the underlying type.
 - Direct initialisation from the enum constants specified.
+- Initialisation from the index of the constant in the initialisation string with `Enum::from_ind()`.
 - Supports enum constants having the same value.
-  - `Enum::size()` returns the number of unique values.
+  - Note that `Enum::size()` returns the number of unique values and initialisation on the index depends only on the unique constants.
   - `Enum::to_string()` returns the string with the names of all the enum constants joined together. The joining string can be customised.
   - `Enum::num_raw_params` returns the number of constants specified, including duplicates.
+  - `Enum::from_raw_ind()` uses the index of the constant in the initialisation string, including duplicates.
+
+## Comparison with [magic_enum](https://github.com/Neargye/magic_enum)
+
+`magic_enum` is a popular enum library that achieves the same purpose. However, this library has significant advantages:
+
+- No limitation on the possible ranges
+- Faster compilation time due to not iterating over ranges
+- Works with aliased values (enum constants having the same value)
