@@ -309,7 +309,7 @@ struct gen_strings {
         constexpr static auto param_joined_names = enum17::helper::arrs2svs(param_joined_names_str); \
         constexpr enum_name() : cur_select(0) {}                                                     \
         constexpr enum_name(Inner inp) : cur_select(calc_ind(inp)) {}                                \
-        constexpr explicit enum_name(UT inp) : enum_name(static_cast<Inner>(inp)) {}                 \
+        constexpr enum_name(UT inp) : enum_name(static_cast<Inner>(inp)) {}                          \
         constexpr std::size_t calc_ind(Inner inp) const {                                            \
             for (std::size_t i = 0; i < num_params; i++) {                                           \
                 if (param_infos[i].second == inp) {                                                  \
