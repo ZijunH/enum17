@@ -25,6 +25,7 @@ ENUM17(EnumName, int, A = 1, B, C = 2, D)
 - Implicit conversion to and from the underlying type.
 - Direct initialisation from the enum constants specified.
 - Initialisation from the index of the constant in the initialisation string with `Enum::from_ind()`.
+- `switch` statement warnings with `Enum::to_switch()`.
 - Supports enum constants having the same value.
   - Note that `Enum::size()` returns the number of unique values and initialisation on the index depends only on the unique constants.
   - `Enum::to_string()` returns the string with the names of all the enum constants joined together. The joining string can be customised.

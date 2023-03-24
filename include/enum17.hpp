@@ -350,6 +350,9 @@ struct gen_strings {
         constexpr UT to_ut() const {                                                                 \
             return param_infos[cur_select].second;                                                   \
         }                                                                                            \
+        constexpr Inner to_switch() const {                                                          \
+            return static_cast<Inner>(param_infos[cur_select].second);                               \
+        }                                                                                            \
         friend inline std::ostream& operator<<(std::ostream& stream, const enum_name& value) {       \
             return stream << name << "::" << value.to_string();                                      \
         }                                                                                            \
